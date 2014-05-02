@@ -4,11 +4,11 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     id="org.nypr.cordova.wakeupplugin"
     version="0.1.0">
-    <name>SleepTimer</name>
+    <name>WakeupTimer</name>
     <description>Wakeup Plugin</description>
     <license>Apache 2.0</license>
     <keywords>sleep,wakeup,timer</keywords>
-    <repo>git@git.wnyc.net:mobile/cordova/cordova-plugin-sleeptimer.git</repo>
+    <repo>git@git.wnyc.net:mobile/cordova/cordova-plugin-wakeuptimer.git</repo>
 
     <js-module src="www/wakeup.js" name="Wakeup">
       <clobbers target="wakeuptimer"/>
@@ -34,13 +34,13 @@
     <!--
     <platform name="ios">
         <config-file target="config.xml" parent="/*">
-            <feature name="SleepTimerPlugin">
-                <param name="ios-package" value="SleepTimerPlugin"/>
+            <feature name="WakeupPlugin">
+                <param name="ios-package" value="WakeupPlugin"/>
             </feature>
         </config-file>
 
-        <header-file src="src/ios/SleepTimerPlugin.h" />
-        <source-file src="src/ios/SleepTimerPlugin.m" />
+        <header-file src="src/ios/WakeupPlugin.h" />
+        <source-file src="src/ios/WakeupPlugin.m" />
     </platform>
     -->
 </plugin>
