@@ -1,0 +1,9 @@
+
+Is it possible to send an event to javascript so that javascript can invoke the stream, instead of native code?
+
+Android notes:
+
+Restarting device or Force Stopping the application will kill all alarms. Use android.intent.action.BOOT_COMPLETED intent filter to set alarms upon startup. If app is Force Stopped, it will have to be manually restarted and alarms could be reset at startup.
+
+
+
