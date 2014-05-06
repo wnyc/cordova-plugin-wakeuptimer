@@ -7,7 +7,6 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.Timer;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
@@ -17,11 +16,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Build;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class WakeupPlugin extends CordovaPlugin {
@@ -41,9 +42,6 @@ public class WakeupPlugin extends CordovaPlugin {
 		}
 	};
 
-	protected boolean _countdown;
-	protected Timer _countdownTimer;
-	protected long _time;
 	public static CallbackContext connectionCallbackContext;
 
 	@Override
@@ -53,7 +51,9 @@ public class WakeupPlugin extends CordovaPlugin {
 			if(action.equalsIgnoreCase("wakeup")) {
 				JSONObject options=args.getJSONObject(0);
 
-				setAlarms(options.getJSONArray("alarms"));
+				saveToPrefs(cordova.getActivity().getApplicationContext(), options.getJSONArray("alarms"));
+				
+				setAlarms(cordova.getActivity().getApplicationContext(), options.getJSONArray("alarms"));
 
 				WakeupPlugin.connectionCallbackContext = callbackContext;
 				PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
@@ -75,9 +75,9 @@ public class WakeupPlugin extends CordovaPlugin {
 	}
 
 	@SuppressLint({ "SimpleDateFormat", "NewApi" })
-	protected void setAlarms(JSONArray alarms) throws JSONException{
+	protected static void setAlarms(Context context, JSONArray alarms) throws JSONException{
 
-		cancelAlarms();
+		cancelAlarms(context);
 
 		for(int i=0;i<alarms.length();i++){
 			JSONObject alarm=alarms.getJSONObject(i);
@@ -92,15 +92,15 @@ public class WakeupPlugin extends CordovaPlugin {
 					SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 					Log.d(LOG_TAG,"setting alarm at " + sdf.format(alarmDate.getTime()));
 
-					Intent intent = new Intent(cordova.getActivity().getApplicationContext() , WakeupReceiver.class);
+					Intent intent = new Intent(context, WakeupReceiver.class);
 					if(alarm.has("extra")){
 						intent.putExtra("extra", alarm.getJSONObject("extra").toString());
 						intent.putExtra("time", time.toString());
 						intent.putExtra("day", days.getString(j));
 					}
 
-					PendingIntent sender = PendingIntent.getBroadcast(cordova.getActivity().getApplicationContext(), 19999 + daysOfWeek.get(days.getString(j)), intent, PendingIntent.FLAG_UPDATE_CURRENT);
-					AlarmManager alarmManager = (AlarmManager) cordova.getActivity().getApplicationContext().getSystemService(Context.ALARM_SERVICE);
+					PendingIntent sender = PendingIntent.getBroadcast(context, 19999 + daysOfWeek.get(days.getString(j)), intent, PendingIntent.FLAG_UPDATE_CURRENT);
+					AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 					if (Build.VERSION.SDK_INT>=19) {
 						alarmManager.setExact(AlarmManager.RTC_WAKEUP, alarmDate.getTimeInMillis(), sender);
 					} else {
@@ -112,12 +112,12 @@ public class WakeupPlugin extends CordovaPlugin {
 	}
 
 
-	protected void cancelAlarms(){
+	protected static void cancelAlarms(Context context){
 		Log.d(LOG_TAG, "canceling alarms");
 		for (int i=0;i<7;i++){
-			Intent intent = new Intent(cordova.getActivity().getApplicationContext(), WakeupReceiver.class);
-			PendingIntent sender = PendingIntent.getBroadcast(cordova.getActivity().getApplicationContext(), 19999+i, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-			AlarmManager alarmManager = (AlarmManager) cordova.getActivity().getApplicationContext().getSystemService(Context.ALARM_SERVICE);
+			Intent intent = new Intent(context, WakeupReceiver.class);
+			PendingIntent sender = PendingIntent.getBroadcast(context, 19999+i, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 			alarmManager.cancel(sender);
 		}
 	}
@@ -163,6 +163,17 @@ public class WakeupPlugin extends CordovaPlugin {
 		}
 
 		return calendar;
+	}
+
+	protected static void saveToPrefs(Context context, JSONArray alarms) {
+		SharedPreferences prefs;
+		SharedPreferences.Editor editor;
+
+		prefs = PreferenceManager.getDefaultSharedPreferences(context);
+		editor = prefs.edit();
+		editor.putString("alarms", alarms.toString());
+		editor.commit();
+
 	}
 
 }
