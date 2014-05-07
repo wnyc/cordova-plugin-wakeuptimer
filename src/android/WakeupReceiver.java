@@ -3,10 +3,6 @@ package org.nypr.cordova.wakeupplugin;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-//import org.apache.cordova.PluginResult;
-//import org.json.JSONException;
-//import org.json.JSONObject;
-
 import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;

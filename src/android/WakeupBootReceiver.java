@@ -8,11 +8,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
-import org.json.JSONArray;
-import org.json.JSONException;
-
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 
 public class WakeupBootReceiver extends BroadcastReceiver {
 
@@ -23,19 +18,6 @@ public class WakeupBootReceiver extends BroadcastReceiver {
 	public void onReceive(Context context, Intent intent) {
 		SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		Log.d(LOG_TAG, "wakeup boot receiver fired at " + sdf.format(new Date().getTime()));
-
-		try { 
-			SharedPreferences prefs;
-			prefs = PreferenceManager.getDefaultSharedPreferences(context);
-			String a = prefs.getString("alarms", "[]");
-			Log.d(LOG_TAG, "setting alarms:\n" + a);
-			
-			JSONArray alarms = new JSONArray( a );
-			
-			WakeupPlugin.setAlarms( context, alarms);
-			
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
+    WakeupPlugin.setAlarmsFromPrefs( context );
 	}
 }

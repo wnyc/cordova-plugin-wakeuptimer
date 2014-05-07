@@ -1,9 +1,12 @@
-
-Is it possible to send an event to javascript so that javascript can invoke the stream, instead of native code?
+Is it possible to send an event to javascript so that javascript can invoke the stream, instead of native code? So far I haven't had any luck accomplishing this. Look into doing this in WakeupPlugin.onReset.
 
 Android notes:
 
-Restarting device or Force Stopping the application will kill all alarms. Use android.intent.action.BOOT_COMPLETED intent filter to set alarms upon startup. If app is Force Stopped, it will have to be manually restarted and alarms could be reset at startup.
+The plugin listens for the android.intent.action.BOOT_COMPLETED intent to reschedule the alarms when the device powers on.
+
+Force Stopping the application will kill all alarms. The alarms will be reset the next time the app is launched (manually).
+
+
 
 
 

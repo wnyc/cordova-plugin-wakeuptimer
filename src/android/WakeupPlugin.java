@@ -44,6 +44,15 @@ public class WakeupPlugin extends CordovaPlugin {
 
 	public static CallbackContext connectionCallbackContext;
 
+  @Override
+  public void onReset() {
+    Log.d(LOG_TAG, "Wakeup Plugin onReset");
+    if (! cordova.getActivity().getIntent().getExtras().getBoolean("wakeup", false)) {
+      setAlarmsFromPrefs( cordova.getActivity().getApplicationContext() );
+    }
+    super.onReset();
+  }
+
 	@Override
 	public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
 		boolean ret=true;
@@ -73,6 +82,19 @@ public class WakeupPlugin extends CordovaPlugin {
 		}
 		return ret;
 	}
+
+  public static void setAlarmsFromPrefs(Context context) {
+    try {
+      SharedPreferences prefs;
+      prefs = PreferenceManager.getDefaultSharedPreferences(context);
+      String a = prefs.getString("alarms", "[]");
+      Log.d(LOG_TAG, "setting alarms:\n" + a);
+      JSONArray alarms = new JSONArray( a );
+      WakeupPlugin.setAlarms( context, alarms);
+    } catch (JSONException e) {
+      e.printStackTrace();
+    }
+  }
 
 	@SuppressLint({ "SimpleDateFormat", "NewApi" })
 	protected static void setAlarms(Context context, JSONArray alarms) throws JSONException{
