@@ -84,23 +84,35 @@
             NSDictionary * alarm = alarms[i];
             NSArray * days = [alarm valueForKeyPath:@"days"];
             NSDictionary * time = [alarm valueForKeyPath:@"time"];
+            NSDictionary * extra = [alarm valueForKeyPath:@"extra"];
             
             for (int j=0;j<[days count];j++) {
                 NSDate * alarmDate = [self _getAlarmDate:time day:[self _dayOfWeekIndex:[days objectAtIndex:j]]];
                 if(alarmDate){
-                    // Create a new notification
                     UILocalNotification* alarm = [[UILocalNotification alloc] init];
                     if (alarm)
                     {
                         alarm.fireDate = alarmDate;
                         alarm.timeZone = [NSTimeZone defaultTimeZone];
-                        alarm.repeatInterval = NSDayCalendarUnit;
+                        alarm.repeatInterval = NSWeekCalendarUnit;
                         alarm.soundName = @"alarm_clock_2.wav";
-                        alarm.alertBody = @"Alarm!";
+                        alarm.alertBody = @"Wakeup to the sounds...";
+                        
+                        NSError *error;
+                        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:extra options:0 error:&error];
+                        
+                        NSString *json = @"{}"; // default empty
+                        
+                        if (jsonData) {
+                            json = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+                        }
+                        
                         alarm.userInfo = [[NSDictionary alloc] initWithObjectsAndKeys:
-                                          ALARM_CLOCK_LOCAL_NOTIFICATION, ALARM_CLOCK_LOCAL_NOTIFICATION,
-                                          ALARM_CLOCK_LOCAL_NOTIFICATION, @"alarm", nil];
+                                          @"wakeup", @"type",
+                                         json,  @"extra", nil];
+                        
                         NSLog(@"scheduling a new alarm local notification for %@", alarm.fireDate);
+
                         [app scheduleLocalNotification:alarm];
                     }
                 }
@@ -117,15 +129,15 @@
     NSArray *localNotifications = [app scheduledLocalNotifications];
     
     for (UILocalNotification *not in localNotifications) {
-        NSLog(@"not is %@, user info is %@", not, not.userInfo);
+        //NSLog(@"not is %@, user info is %@", not, not.userInfo);
         /* Right now this is cancelling all notifications -- This is because deleting the app doesn't seem to remove old notifications
          * In the future it would be good to remove the YES ||
          */
         if (YES || [not.userInfo objectForKey:@"alarm"]) {
-            NSLog(@"cancelling existing alarm notification");
+            //NSLog(@"cancelling existing alarm notification");
             [app cancelLocalNotification:not];
         } else {
-            NSLog(@"non-alarm notification -- not cancelling");
+            //NSLog(@"non-alarm notification -- not cancelling");
         }
     }
     //[self performSelector:@selector(allowDeepSleepIfAlarmIsOff) withObject:nil afterDelay:60*15];
@@ -185,7 +197,7 @@
         [addDayComponents setDay:(daysUntilAlarm)];
         alarmDate = [gregorian dateByAddingComponents:addDayComponents toDate:alarmDate options:0];
 
-        NSLog(@"alarmDate: %@", alarmDate);
+        
     }
     
 	return alarmDate;
