@@ -17,7 +17,15 @@
 {
     CDVPluginResult* pluginResult = nil;
     NSDictionary * options = [command.arguments objectAtIndex:0];
-    NSArray * alarms = [options objectForKey:@"alarms"];
+    NSArray * alarms;
+    
+    if ([options objectForKey:@"alarms"]) {
+        alarms = [options objectForKey:@"alarms"];
+    } else {
+        alarms = [NSArray array]; // empty means cancel all
+    }
+    
+    [options objectForKey:@"alarms"];
     
     NSLog(@"scheduling wakeups...");
     
