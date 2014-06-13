@@ -163,10 +163,15 @@ public class WakeupPlugin extends CordovaPlugin {
 	
 	protected static void cancelAlarms(Context context){
 		Log.d(LOG_TAG, "canceling alarms");
+		Intent intent = new Intent(context, WakeupReceiver.class);
+		PendingIntent sender = PendingIntent.getBroadcast(context, 10000, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+		AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+		alarmManager.cancel(sender);
+		
 		for (int i=0;i<7;i++){
-			Intent intent = new Intent(context, WakeupReceiver.class);
-			PendingIntent sender = PendingIntent.getBroadcast(context, 19999+i, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-			AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+			intent = new Intent(context, WakeupReceiver.class);
+			sender = PendingIntent.getBroadcast(context, 10010+i, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 			alarmManager.cancel(sender);
 		}
 	}
