@@ -73,8 +73,40 @@
 }
 
 #pragma mark Alarm configuration methods
+
+- (void)_setNotification:(NSDate*) alarmDate extra:(NSDictionary*)extra {
+    if(alarmDate){
+        UILocalNotification* alarm = [[UILocalNotification alloc] init];
+        if (alarm) {
+            alarm.fireDate = alarmDate;
+            alarm.timeZone = [NSTimeZone defaultTimeZone];
+            alarm.repeatInterval = NSWeekCalendarUnit;
+            alarm.soundName = @"alarm_clock_2.wav";
+            alarm.alertBody = @"Wakeup to the sounds...";
+            
+            NSError *error;
+            NSData *jsonData = [NSJSONSerialization dataWithJSONObject:extra options:0 error:&error];
+            
+            NSString *json = @"{}"; // default empty
+            
+            if (jsonData) {
+                json = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+            }
+            
+            alarm.userInfo = [[NSDictionary alloc] initWithObjectsAndKeys:
+                              @"wakeup", @"type",
+                              json,  @"extra", nil];
+            
+            NSLog(@"scheduling a new alarm local notification for %@", alarm.fireDate);
+            
+            UIApplication * app = [UIApplication sharedApplication];
+            [app scheduleLocalNotification:alarm];
+        }
+    }
+}
+
 - (void)_setAlarms:(NSArray *)alarms {
-    UIApplication * app = [UIApplication sharedApplication];
+    
 	BOOL backgroundSupported = [self _isBackgroundSupported];
     
     [self _cancelAlarms];
@@ -82,39 +114,24 @@
     if (backgroundSupported) {
         for (int i=0;i<[alarms count];i++){
             NSDictionary * alarm = alarms[i];
-            NSArray * days = [alarm valueForKeyPath:@"days"];
+            
+            NSString * type=[alarm valueForKeyPath:@"type"];
             NSDictionary * time = [alarm valueForKeyPath:@"time"];
             NSDictionary * extra = [alarm valueForKeyPath:@"extra"];
             
-            for (int j=0;j<[days count];j++) {
-                NSDate * alarmDate = [self _getAlarmDate:time day:[self _dayOfWeekIndex:[days objectAtIndex:j]]];
-                if(alarmDate){
-                    UILocalNotification* alarm = [[UILocalNotification alloc] init];
-                    if (alarm)
-                    {
-                        alarm.fireDate = alarmDate;
-                        alarm.timeZone = [NSTimeZone defaultTimeZone];
-                        alarm.repeatInterval = NSWeekCalendarUnit;
-                        alarm.soundName = @"alarm_clock_2.wav";
-                        alarm.alertBody = @"Wakeup to the sounds...";
-                        
-                        NSError *error;
-                        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:extra options:0 error:&error];
-                        
-                        NSString *json = @"{}"; // default empty
-                        
-                        if (jsonData) {
-                            json = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-                        }
-                        
-                        alarm.userInfo = [[NSDictionary alloc] initWithObjectsAndKeys:
-                                          @"wakeup", @"type",
-                                         json,  @"extra", nil];
-                        
-                        NSLog(@"scheduling a new alarm local notification for %@", alarm.fireDate);
-
-                        [app scheduleLocalNotification:alarm];
-                    }
+            if ( type==nil ) {
+                type = @"onetime";
+            }
+            
+            // other types to add support for: weekly, daily, weekday, weekend
+            if ( [type isEqualToString:@"onetime"]) {
+                NSDate * alarmDate = [self _getOneTimeAlarmDate:time];
+                [self _setNotification:alarmDate extra:extra];
+            } else if ( [type isEqualToString:@"daylist"] ) {
+                NSArray * days = [alarm valueForKeyPath:@"days"];
+                for (int j=0;j<[days count];j++) {
+                    NSDate * alarmDate = [self _getAlarmDate:time day:[self _dayOfWeekIndex:[days objectAtIndex:j]]];
+                    [self _setNotification:alarmDate extra:extra];
                 }
             }
             
@@ -152,6 +169,27 @@
 		backgroundSupported = device.multitaskingSupported;
 	}
 	return backgroundSupported;
+}
+
+-(NSDate*) _getOneTimeAlarmDate:(NSDictionary*)time {
+    NSDate *alarmDate = nil;
+    NSDate * now = [NSDate date];
+    int hour=[time objectForKey:@"hour"]!=nil ? [[time objectForKey:@"hour"] intValue] : -1;
+    int minute=[time objectForKey:@"minute"]!=nil ? [[time objectForKey:@"minute"] intValue] : 0;
+    NSCalendar * gregorian = [[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar];
+    NSDateComponents *nowComponents =[gregorian components:(NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit) fromDate:now]; // set to current day
+    [nowComponents setHour:hour];
+    [nowComponents setMinute:minute];
+    [nowComponents setSecond:0];
+    alarmDate = [gregorian dateFromComponents:nowComponents];
+
+    if ( [alarmDate compare:now]==NSOrderedAscending){
+        NSDateComponents * addDayComponents = [[NSDateComponents alloc] init];
+        [addDayComponents setDay:1];
+        alarmDate = [gregorian dateByAddingComponents:addDayComponents toDate:alarmDate options:0];
+    }
+    
+    return alarmDate;
 }
 
 -(NSDate*) _getAlarmDate:(NSDictionary*)time day:(int)dayOfWeek {
