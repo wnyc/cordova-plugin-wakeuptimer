@@ -46,6 +46,7 @@ public class WakeupPlugin extends CordovaPlugin {
 
   @Override
   public void onReset() {
+	// app startup
     Log.d(LOG_TAG, "Wakeup Plugin onReset");
     if (! cordova.getActivity().getIntent().getExtras().getBoolean("wakeup", false)) {
       setAlarmsFromPrefs( cordova.getActivity().getApplicationContext() );
@@ -103,37 +104,63 @@ public class WakeupPlugin extends CordovaPlugin {
 
 		for(int i=0;i<alarms.length();i++){
 			JSONObject alarm=alarms.getJSONObject(i);
-			if (!alarm.has("time") || !alarm.has("days")){
-				throw new JSONException("Invalid alarm configuration: " + alarm.toString());
+			
+			String type = "onetime";
+			if (alarm.has("type")){
+				type = alarm.getString("type");
 			}
-			JSONArray days=alarm.getJSONArray("days");
+			
+			if (!alarm.has("time")){
+				throw new JSONException("alarm missing time: " + alarm.toString());
+			}
+			
 			JSONObject time=alarm.getJSONObject("time");
-			for (int j=0;j<days.length();j++){
-				Calendar alarmDate=getAlarmDate(time, daysOfWeek.get(days.getString(j)));
-				if(alarmDate!=null){
-					SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-					Log.d(LOG_TAG,"setting alarm at " + sdf.format(alarmDate.getTime()));
-
+			
+			if ( type.equals("onetime")) {
+				Calendar alarmDate=getOneTimeAlarmDate(time);
+				Intent intent = new Intent(context, WakeupReceiver.class);
+				if(alarm.has("extra")){
+					intent.putExtra("extra", alarm.getJSONObject("extra").toString());
+					intent.putExtra("type", type);
+				}
+				
+				setNotification(context, alarmDate, intent, 10000);
+				
+			} else if ( type.equals("daylist") ) {
+				JSONArray days=alarm.getJSONArray("days");
+				
+				for (int j=0;j<days.length();j++){
+					Calendar alarmDate=getAlarmDate(time, daysOfWeek.get(days.getString(j)));
 					Intent intent = new Intent(context, WakeupReceiver.class);
 					if(alarm.has("extra")){
 						intent.putExtra("extra", alarm.getJSONObject("extra").toString());
+						intent.putExtra("type", type);
 						intent.putExtra("time", time.toString());
 						intent.putExtra("day", days.getString(j));
 					}
-
-					PendingIntent sender = PendingIntent.getBroadcast(context, 19999 + daysOfWeek.get(days.getString(j)), intent, PendingIntent.FLAG_UPDATE_CURRENT);
-					AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-					if (Build.VERSION.SDK_INT>=19) {
-						alarmManager.setExact(AlarmManager.RTC_WAKEUP, alarmDate.getTimeInMillis(), sender);
-					} else {
-						alarmManager.set(AlarmManager.RTC_WAKEUP, alarmDate.getTimeInMillis(), sender);
-					}
+					
+					setNotification(context, alarmDate, intent, 10010 + daysOfWeek.get(days.getString(j)));
 				}
 			}
 		}
 	}
 
 
+	protected static void setNotification(Context context, Calendar alarmDate, Intent intent, int id) {
+		if(alarmDate!=null){
+			SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			Log.d(LOG_TAG,"setting alarm at " + sdf.format(alarmDate.getTime()));
+			
+			PendingIntent sender = PendingIntent.getBroadcast(context, id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+			if (Build.VERSION.SDK_INT>=19) {
+				alarmManager.setExact(AlarmManager.RTC_WAKEUP, alarmDate.getTimeInMillis(), sender);
+			} else {
+				alarmManager.set(AlarmManager.RTC_WAKEUP, alarmDate.getTimeInMillis(), sender);
+			}
+		}
+	}
+	
 	protected static void cancelAlarms(Context context){
 		Log.d(LOG_TAG, "canceling alarms");
 		for (int i=0;i<7;i++){
@@ -144,6 +171,32 @@ public class WakeupPlugin extends CordovaPlugin {
 		}
 	}
 
+	protected static Calendar getOneTimeAlarmDate( JSONObject time) throws JSONException {
+		TimeZone defaultz = TimeZone.getDefault();
+		Calendar calendar = new GregorianCalendar(defaultz);
+		Calendar now = new GregorianCalendar(defaultz);
+		now.setTime(new Date());
+		calendar.setTime(new Date());
+
+		int hour=(time.has("hour")) ? time.getInt("hour") : -1;
+		int minute=(time.has("minute")) ? time.getInt("minute") : 0;
+
+		if(hour>=0){
+			calendar.set(Calendar.HOUR_OF_DAY, hour);
+			calendar.set(Calendar.MINUTE, minute);
+			calendar.set(Calendar.SECOND, 0);
+			calendar.set(Calendar.MILLISECOND,0);
+
+			if (calendar.before(now)){
+				calendar.set(Calendar.DATE, calendar.get(Calendar.DATE) + 1);
+			}
+		}else{
+			calendar=null;
+		}
+
+		return calendar;
+	}
+	
 	protected static Calendar getAlarmDate( JSONObject time, int dayOfWeek) throws JSONException {
 		TimeZone defaultz = TimeZone.getDefault();
 		Calendar calendar = new GregorianCalendar(defaultz);

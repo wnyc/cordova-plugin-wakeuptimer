@@ -37,20 +37,22 @@ public class WakeupReceiver extends BroadcastReceiver {
 			i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			context.startActivity(i);
 
-			// repeat in one week
-			Date next = new Date(new Date().getTime() + (7 * 24 * 60 * 60 * 1000));
-			Log.d(LOG_TAG,"resetting alarm at " + sdf.format(next));
-
-			Intent reschedule = new Intent(context, WakeupReceiver.class);
-			reschedule.putExtra("extra", intent.getExtras().get("extra").toString());
-			reschedule.putExtra("day", WakeupPlugin.daysOfWeek.get(intent.getExtras().get("day")));
-
-			PendingIntent sender = PendingIntent.getBroadcast(context, 19999 + WakeupPlugin.daysOfWeek.get(intent.getExtras().get("day")), intent, PendingIntent.FLAG_UPDATE_CURRENT);
-			AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-			if (Build.VERSION.SDK_INT>=19) {
-				alarmManager.setExact(AlarmManager.RTC_WAKEUP, next.getTime(), sender);
-			} else {
-				alarmManager.set(AlarmManager.RTC_WAKEUP, next.getTime(), sender);
+			if (intent.getExtras().getString("type").equals("daylist")) {
+				// repeat in one week
+				Date next = new Date(new Date().getTime() + (7 * 24 * 60 * 60 * 1000));
+				Log.d(LOG_TAG,"resetting alarm at " + sdf.format(next));
+	
+				Intent reschedule = new Intent(context, WakeupReceiver.class);
+				reschedule.putExtra("extra", intent.getExtras().get("extra").toString());
+				reschedule.putExtra("day", WakeupPlugin.daysOfWeek.get(intent.getExtras().get("day")));
+	
+				PendingIntent sender = PendingIntent.getBroadcast(context, 19999 + WakeupPlugin.daysOfWeek.get(intent.getExtras().get("day")), intent, PendingIntent.FLAG_UPDATE_CURRENT);
+				AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+				if (Build.VERSION.SDK_INT>=19) {
+					alarmManager.setExact(AlarmManager.RTC_WAKEUP, next.getTime(), sender);
+				} else {
+					alarmManager.set(AlarmManager.RTC_WAKEUP, next.getTime(), sender);
+				}
 			}
 
 		} catch (ClassNotFoundException e) {
