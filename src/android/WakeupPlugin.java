@@ -29,6 +29,9 @@ public class WakeupPlugin extends CordovaPlugin {
 
 	protected static final String LOG_TAG = "WakeupPlugin";
 
+	protected static final int ID_DAYLIST_OFFSET = 10010;
+	protected static final int ID_ONETIME_OFFSET = 10000;
+	
 	public static  Map<String , Integer> daysOfWeek = new HashMap<String , Integer>() {
 		private static final long serialVersionUID = 1L;
 		{
@@ -61,9 +64,15 @@ public class WakeupPlugin extends CordovaPlugin {
 			if(action.equalsIgnoreCase("wakeup")) {
 				JSONObject options=args.getJSONObject(0);
 
-				saveToPrefs(cordova.getActivity().getApplicationContext(), options.getJSONArray("alarms"));
+				JSONArray alarms;
+				if (options.has("alarms")==true) {
+					alarms = options.getJSONArray("alarms");
+				} else {
+					alarms = new JSONArray(); // default to empty array
+				}
 				
-				setAlarms(cordova.getActivity().getApplicationContext(), options.getJSONArray("alarms"));
+				saveToPrefs(cordova.getActivity().getApplicationContext(), alarms);
+				setAlarms(cordova.getActivity().getApplicationContext(), alarms);
 
 				WakeupPlugin.connectionCallbackContext = callbackContext;
 				PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
@@ -71,14 +80,20 @@ public class WakeupPlugin extends CordovaPlugin {
 				callbackContext.sendPluginResult(pluginResult);  
 
 			}else{
-				callbackContext.error(LOG_TAG + " error: invalid action (" + action + ")");
+				PluginResult pluginResult = new PluginResult(PluginResult.Status.ERROR, LOG_TAG + " error: invalid action (" + action + ")");
+				pluginResult.setKeepCallback(true);
+				callbackContext.sendPluginResult(pluginResult);  
 				ret=false;
 			}
 		} catch (JSONException e) {
-			callbackContext.error(LOG_TAG + " error: invalid json");
+			PluginResult pluginResult = new PluginResult(PluginResult.Status.ERROR, LOG_TAG + " error: invalid json");
+			pluginResult.setKeepCallback(true);
+			callbackContext.sendPluginResult(pluginResult);  
 			ret = false;
 		} catch (Exception e) {
-			callbackContext.error(LOG_TAG + " error: " + e.getMessage());
+			PluginResult pluginResult = new PluginResult(PluginResult.Status.ERROR, LOG_TAG + " error: " + e.getMessage());
+			pluginResult.setKeepCallback(true);
+			callbackContext.sendPluginResult(pluginResult);  
 			ret = false;
 		}
 		return ret;
@@ -124,7 +139,7 @@ public class WakeupPlugin extends CordovaPlugin {
 					intent.putExtra("type", type);
 				}
 				
-				setNotification(context, alarmDate, intent, 10000);
+				setNotification(context, alarmDate, intent, ID_ONETIME_OFFSET);
 				
 			} else if ( type.equals("daylist") ) {
 				JSONArray days=alarm.getJSONArray("days");
@@ -139,7 +154,7 @@ public class WakeupPlugin extends CordovaPlugin {
 						intent.putExtra("day", days.getString(j));
 					}
 					
-					setNotification(context, alarmDate, intent, 10010 + daysOfWeek.get(days.getString(j)));
+					setNotification(context, alarmDate, intent, ID_DAYLIST_OFFSET + daysOfWeek.get(days.getString(j)));
 				}
 			}
 		}
@@ -149,7 +164,7 @@ public class WakeupPlugin extends CordovaPlugin {
 	protected static void setNotification(Context context, Calendar alarmDate, Intent intent, int id) {
 		if(alarmDate!=null){
 			SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-			Log.d(LOG_TAG,"setting alarm at " + sdf.format(alarmDate.getTime()));
+			Log.d(LOG_TAG,"setting alarm at " + sdf.format(alarmDate.getTime()) + "; id " + id);
 			
 			PendingIntent sender = PendingIntent.getBroadcast(context, id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 			AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
@@ -164,13 +179,15 @@ public class WakeupPlugin extends CordovaPlugin {
 	protected static void cancelAlarms(Context context){
 		Log.d(LOG_TAG, "canceling alarms");
 		Intent intent = new Intent(context, WakeupReceiver.class);
-		PendingIntent sender = PendingIntent.getBroadcast(context, 10000, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+		PendingIntent sender = PendingIntent.getBroadcast(context, ID_ONETIME_OFFSET, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 		AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+		Log.d(LOG_TAG, "cancelling alarm id " + ID_ONETIME_OFFSET);
 		alarmManager.cancel(sender);
 		
 		for (int i=0;i<7;i++){
 			intent = new Intent(context, WakeupReceiver.class);
-			sender = PendingIntent.getBroadcast(context, 10010+i, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+			Log.d(LOG_TAG, "cancelling alarm id " + (ID_DAYLIST_OFFSET+i));
+			sender = PendingIntent.getBroadcast(context, ID_DAYLIST_OFFSET + i, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 			alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 			alarmManager.cancel(sender);
 		}
