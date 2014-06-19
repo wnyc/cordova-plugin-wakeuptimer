@@ -11,6 +11,15 @@
 
 @implementation WakeupPlugin
 
+- (void)pluginInitialize
+{
+    // watch for local notification
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_onLocalNotification:) name:CDVLocalNotification object:nil]; // if app is in foreground
+    
+    NSLog(@"Wakeup Plugin initialized");
+}
+
+
 #pragma mark Plugin methods
 
 - (void)wakeup:(CDVInvokedUrlCommand*)command
@@ -286,6 +295,33 @@
         dayIndex = 6;
     }
     return dayIndex;
+}
+
+#pragma mark Wakeup handlers
+
+- (void)_onLocalNotification:(NSNotification *)notification
+{
+    NSLog(@"Wakeup Plugin received local notification while app is running");
+    
+    UILocalNotification* localNotification = [notification object];
+    NSString * notificationType = [[localNotification userInfo] objectForKey:@"type"];
+    
+    if ( notificationType!=nil && [notificationType isEqualToString:@"wakeup"] && _callbackId!=nil) {
+        NSLog(@"wakeup detected!");
+        NSString * extra = [[localNotification userInfo] objectForKey:@"extra"];
+        CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:@{@"type": @"wakeup", @"extra" : extra}];
+        [pluginResult setKeepCallbackAsBool:YES];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:_callbackId];
+    }
+
+}
+
+#pragma mark Cleanup
+
+- (void)dispose {
+    NSLog(@"Wakeup Plugin disposing");
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:CDVLocalNotification object:nil];
+    [super dispose];
 }
 
 @end
