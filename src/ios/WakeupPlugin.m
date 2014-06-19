@@ -82,7 +82,7 @@
 
 #pragma mark Alarm configuration methods
 
-- (void)_setNotification:(NSDate*) alarmDate extra:(NSDictionary*)extra {
+- (void)_setNotification:(NSString*)type alarmDate:(NSDate*)alarmDate extra:(NSDictionary*)extra {
     if(alarmDate){
         UILocalNotification* alarm = [[UILocalNotification alloc] init];
         if (alarm) {
@@ -109,6 +109,12 @@
             
             UIApplication * app = [UIApplication sharedApplication];
             [app scheduleLocalNotification:alarm];
+            
+            NSTimeInterval time = [alarmDate timeIntervalSince1970];
+            NSNumber *timeMs = [NSNumber numberWithDouble:(time * 1000)];
+            CDVPluginResult * pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:@{@"type": @"set", @"alarm_type":type, @"alarm_date" : timeMs}];
+            [pluginResult setKeepCallbackAsBool:YES];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:_callbackId];
         }
     }
 }
@@ -134,12 +140,12 @@
             // other types to add support for: weekly, daily, weekday, weekend
             if ( [type isEqualToString:@"onetime"]) {
                 NSDate * alarmDate = [self _getOneTimeAlarmDate:time];
-                [self _setNotification:alarmDate extra:extra];
+                [self _setNotification:type alarmDate:alarmDate extra:extra];
             } else if ( [type isEqualToString:@"daylist"] ) {
                 NSArray * days = [alarm valueForKeyPath:@"days"];
                 for (int j=0;j<[days count];j++) {
                     NSDate * alarmDate = [self _getAlarmDate:time day:[self _dayOfWeekIndex:[days objectAtIndex:j]]];
-                    [self _setNotification:alarmDate extra:extra];
+                    [self _setNotification:type alarmDate:alarmDate extra:extra];
                 }
             }
             

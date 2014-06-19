@@ -3,6 +3,10 @@ package org.nypr.cordova.wakeupplugin;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.apache.cordova.PluginResult;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -37,6 +41,16 @@ public class WakeupReceiver extends BroadcastReceiver {
 			i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			context.startActivity(i);
 
+			if(WakeupPlugin.connectionCallbackContext!=null) {
+				JSONObject o=new JSONObject();
+				o.put("type", "wakeup");
+				o.put("extra", intent.getExtras().get("extra").toString());
+				
+				PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, o);
+				pluginResult.setKeepCallback(true);
+				WakeupPlugin.connectionCallbackContext.sendPluginResult(pluginResult);  
+			}
+			
 			if (intent.getExtras().getString("type").equals("daylist")) {
 				// repeat in one week
 				Date next = new Date(new Date().getTime() + (7 * 24 * 60 * 60 * 1000));
@@ -55,6 +69,8 @@ public class WakeupReceiver extends BroadcastReceiver {
 				}
 			}
 
+		} catch (JSONException e){
+			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}

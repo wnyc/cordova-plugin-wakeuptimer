@@ -106,7 +106,7 @@ public class WakeupPlugin extends CordovaPlugin {
       String a = prefs.getString("alarms", "[]");
       Log.d(LOG_TAG, "setting alarms:\n" + a);
       JSONArray alarms = new JSONArray( a );
-      WakeupPlugin.setAlarms( context, alarms);
+      WakeupPlugin.setAlarms(context, alarms);
     } catch (JSONException e) {
       e.printStackTrace();
     }
@@ -139,7 +139,7 @@ public class WakeupPlugin extends CordovaPlugin {
 					intent.putExtra("type", type);
 				}
 				
-				setNotification(context, alarmDate, intent, ID_ONETIME_OFFSET);
+				setNotification(context, type, alarmDate, intent, ID_ONETIME_OFFSET);
 				
 			} else if ( type.equals("daylist") ) {
 				JSONArray days=alarm.getJSONArray("days");
@@ -154,24 +154,38 @@ public class WakeupPlugin extends CordovaPlugin {
 						intent.putExtra("day", days.getString(j));
 					}
 					
-					setNotification(context, alarmDate, intent, ID_DAYLIST_OFFSET + daysOfWeek.get(days.getString(j)));
+					setNotification(context, type, alarmDate, intent, ID_DAYLIST_OFFSET + daysOfWeek.get(days.getString(j)));
 				}
 			}
 		}
 	}
 
 
-	protected static void setNotification(Context context, Calendar alarmDate, Intent intent, int id) {
+	protected static void setNotification(Context context, String type, Calendar alarmDate, Intent intent, int id) throws JSONException{
 		if(alarmDate!=null){
 			SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			Log.d(LOG_TAG,"setting alarm at " + sdf.format(alarmDate.getTime()) + "; id " + id);
 			
+			intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
 			PendingIntent sender = PendingIntent.getBroadcast(context, id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 			AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 			if (Build.VERSION.SDK_INT>=19) {
 				alarmManager.setExact(AlarmManager.RTC_WAKEUP, alarmDate.getTimeInMillis(), sender);
 			} else {
 				alarmManager.set(AlarmManager.RTC_WAKEUP, alarmDate.getTimeInMillis(), sender);
+			}
+			
+			if(WakeupPlugin.connectionCallbackContext!=null) {
+				JSONObject o=new JSONObject();
+				o.put("type", "set");
+				o.put("alarm_type", type);
+				o.put("alarm_date", alarmDate.getTimeInMillis());
+				
+				Log.d(LOG_TAG, "alarm time in millis: " + alarmDate.getTimeInMillis());
+				
+				PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, o);
+				pluginResult.setKeepCallback(true);
+				WakeupPlugin.connectionCallbackContext.sendPluginResult(pluginResult);  
 			}
 		}
 	}
@@ -265,7 +279,7 @@ public class WakeupPlugin extends CordovaPlugin {
 	protected static void saveToPrefs(Context context, JSONArray alarms) {
 		SharedPreferences prefs;
 		SharedPreferences.Editor editor;
-
+	
 		prefs = PreferenceManager.getDefaultSharedPreferences(context);
 		editor = prefs.edit();
 		editor.putString("alarms", alarms.toString());
