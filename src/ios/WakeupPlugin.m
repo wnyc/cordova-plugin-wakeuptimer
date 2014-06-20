@@ -34,15 +34,31 @@
         alarms = [NSArray array]; // empty means cancel all
     }
     
-    [options objectForKey:@"alarms"];
-    
     NSLog(@"scheduling wakeups...");
     
     _callbackId = command.callbackId;
     
     [self _saveToPrefs:alarms];
     
-    [self _setAlarms:alarms];
+    [self _setAlarms:alarms cancelAlarms:true];
+    
+    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    [pluginResult setKeepCallbackAsBool:YES];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+- (void)snooze:(CDVInvokedUrlCommand *)command
+{
+    CDVPluginResult* pluginResult = nil;
+    NSDictionary * options = [command.arguments objectAtIndex:0];
+    NSArray * alarms;
+    _callbackId = command.callbackId;
+    
+    if ([options objectForKey:@"alarms"]) {
+        alarms = [options objectForKey:@"alarms"];
+        NSLog(@"scheduling snooze...");
+        [self _setAlarms:alarms cancelAlarms:false];
+    }
     
     pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     [pluginResult setKeepCallbackAsBool:YES];
@@ -112,6 +128,7 @@
             
             alarm.userInfo = [[NSDictionary alloc] initWithObjectsAndKeys:
                               @"wakeup", @"type",
+                              type, @"alarm-type",
                               json,  @"extra", nil];
             
             NSLog(@"scheduling a new alarm local notification for %@", alarm.fireDate);
@@ -128,11 +145,13 @@
     }
 }
 
-- (void)_setAlarms:(NSArray *)alarms {
+- (void)_setAlarms:(NSArray *)alarms cancelAlarms:(BOOL)cancelAlarms{
     
 	BOOL backgroundSupported = [self _isBackgroundSupported];
     
-    [self _cancelAlarms];
+    if(cancelAlarms) {
+        [self _cancelAlarms];
+    }
     
     if (backgroundSupported) {
         for (int i=0;i<[alarms count];i++){
@@ -156,6 +175,10 @@
                     NSDate * alarmDate = [self _getAlarmDate:time day:[self _dayOfWeekIndex:[days objectAtIndex:j]]];
                     [self _setNotification:type alarmDate:alarmDate extra:extra];
                 }
+            } else if ( [type isEqualToString:@"snooze"]) {
+                [self _cancelSnooze];
+                NSDate * alarmDate = [self _getTimeFromNow:time];
+                [self _setNotification:type alarmDate:alarmDate extra:extra];
             }
             
             NSLog(@"setting alarm...");
@@ -173,11 +196,35 @@
         /* Right now this is cancelling all notifications -- This is because deleting the app doesn't seem to remove old notifications
          * In the future it would be good to remove the YES ||
          */
+        /*
         if (YES || [not.userInfo objectForKey:@"alarm"]) {
             //NSLog(@"cancelling existing alarm notification");
             [app cancelLocalNotification:not];
         } else {
             //NSLog(@"non-alarm notification -- not cancelling");
+        }
+         */
+        NSString * type = [not.userInfo objectForKey:@"type"];
+        if (type && [type isEqualToString:@"wakeup"]) {
+            NSLog(@"cancelling existing alarm notification");
+            [app cancelLocalNotification:not];
+        }
+        
+    }
+    //[self performSelector:@selector(allowDeepSleepIfAlarmIsOff) withObject:nil afterDelay:60*15];
+    
+}
+
+- (void) _cancelSnooze {
+    UIApplication * app = [UIApplication sharedApplication];
+    NSArray *localNotifications = [app scheduledLocalNotifications];
+    
+    for (UILocalNotification *not in localNotifications) {
+        //NSLog(@"not is %@, user info is %@", not, not.userInfo);
+        NSString * type = [not.userInfo objectForKey:@"alarm-type"];
+        if (type && [type isEqualToString:@"snooze"]) {
+            NSLog(@"cancelling existing alarm notification");
+            [app cancelLocalNotification:not];
         }
     }
     //[self performSelector:@selector(allowDeepSleepIfAlarmIsOff) withObject:nil afterDelay:60*15];
@@ -262,6 +309,22 @@
     }
     
 	return alarmDate;
+}
+
+-(NSDate*) _getTimeFromNow:(NSDictionary*)time {
+    NSDate *alarmDate = [NSDate date];
+
+    int seconds=[time objectForKey:@"seconds"]!=nil ? [[time objectForKey:@"seconds"] intValue] : -1;
+
+    if (seconds>=0){
+        NSCalendar * gregorian = [[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar];
+        NSDateComponents * addSeconds = [[NSDateComponents alloc] init];
+        [addSeconds setSecond:seconds];
+        alarmDate = [gregorian dateByAddingComponents:addSeconds toDate:alarmDate options:0];
+    } else {
+        alarmDate=nil;
+    }
+    return alarmDate;
 }
 
 - (unsigned) _secondOfTheDay:(NSDate*) time
