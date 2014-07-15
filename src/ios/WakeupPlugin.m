@@ -107,7 +107,7 @@
 
 #pragma mark Alarm configuration methods
 
-- (void)_setNotification:(NSString*)type alarmDate:(NSDate*)alarmDate extra:(NSDictionary*)extra message:(NSString*)message repeatInterval:(int)repeatInterval{
+- (void)_setNotification:(NSString*)type alarmDate:(NSDate*)alarmDate extra:(NSDictionary*)extra message:(NSString*)message action:(NSString*)action  repeatInterval:(int)repeatInterval{
     if(alarmDate){
         UILocalNotification* alarm = [[UILocalNotification alloc] init];
         if (alarm) {
@@ -119,6 +119,10 @@
                 alarm.alertBody = message;
             } else {
                 alarm.alertBody = @"Wake up!";
+            }
+            
+            if (action!=nil){
+                alarm.alertAction = action;
             }
             
             NSError *error;
@@ -165,6 +169,7 @@
             NSDictionary * time = [alarm valueForKeyPath:@"time"];
             NSDictionary * extra = [alarm valueForKeyPath:@"extra"];
             NSString * message = [alarm valueForKeyPath:@"message"];
+            NSString * action = [alarm valueForKeyPath:@"action"];
             
             if ( type==nil ) {
                 type = @"onetime";
@@ -173,17 +178,17 @@
             // other types to add support for: weekly, daily, weekday, weekend
             if ( [type isEqualToString:@"onetime"]) {
                 NSDate * alarmDate = [self _getOneTimeAlarmDate:time];
-                [self _setNotification:type alarmDate:alarmDate extra:extra message:message repeatInterval:0];
+                [self _setNotification:type alarmDate:alarmDate extra:extra message:message action:action repeatInterval:0];
             } else if ( [type isEqualToString:@"daylist"] ) {
                 NSArray * days = [alarm valueForKeyPath:@"days"];
                 for (int j=0;j<[days count];j++) {
                     NSDate * alarmDate = [self _getAlarmDate:time day:[self _dayOfWeekIndex:[days objectAtIndex:j]]];
-                    [self _setNotification:type alarmDate:alarmDate extra:extra message:message repeatInterval:NSWeekCalendarUnit];
+                    [self _setNotification:type alarmDate:alarmDate extra:extra message:message action:action repeatInterval:NSWeekCalendarUnit];
                 }
             } else if ( [type isEqualToString:@"snooze"]) {
                 [self _cancelSnooze];
                 NSDate * alarmDate = [self _getTimeFromNow:time];
-                [self _setNotification:type alarmDate:alarmDate extra:extra message:message repeatInterval:0];
+                [self _setNotification:type alarmDate:alarmDate extra:extra message:message action:action repeatInterval:0];
             }
             
             NSLog(@"setting alarm...");
