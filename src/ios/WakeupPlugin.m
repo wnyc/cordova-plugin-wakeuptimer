@@ -16,6 +16,10 @@
     // watch for local notification
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_onLocalNotification:) name:CDVLocalNotification object:nil]; // if app is in foreground
     
+    [UIDevice currentDevice].batteryMonitoringEnabled=YES; // required to determine if device is charging
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_onBatteryStateDidChange:) name:UIDeviceBatteryStateDidChangeNotification object:nil];
+    [self _onBatteryStateDidChange:nil];
+    
     NSLog(@"Wakeup Plugin initialized");
 }
 
@@ -396,11 +400,23 @@
 
 }
 
+- (void)_onBatteryStateDidChange:(NSNotification *)notification {
+    NSLog(@"Wakeup Plugin battery status changed");
+    if ([UIDevice currentDevice].batteryState == UIDeviceBatteryStateCharging || [UIDevice currentDevice].batteryState == UIDeviceBatteryStateFull ) {
+        // device is charging - disable automatic screen-locking
+        [UIApplication sharedApplication].idleTimerDisabled = YES;
+    } else {
+        // device is NOT charging - enable automatic screen-locking
+        [UIApplication sharedApplication].idleTimerDisabled = NO;
+    }
+}
+
 #pragma mark Cleanup
 
 - (void)dispose {
     NSLog(@"Wakeup Plugin disposing");
     [[NSNotificationCenter defaultCenter] removeObserver:self name:CDVLocalNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIDeviceBatteryStateDidChangeNotification object:nil];
     [super dispose];
 }
 
