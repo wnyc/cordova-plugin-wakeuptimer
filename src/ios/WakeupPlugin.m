@@ -82,8 +82,11 @@
         NSMutableDictionary *settings = [self _preferences];
         NSString *alarmsJson = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
         [settings setValue:alarmsJson forKey:@"alarms"];
-        if (![settings writeToFile:[self _prefsFilePath] atomically:YES]) {
+        NSString * prefsFile = [self _prefsFilePath];
+        if (![settings writeToFile:prefsFile atomically:YES]) {
             NSLog(@"failed to save preferences to file!");
+        } else {
+            [self _addSkipBackupAttributeToItemAtURL:[NSURL fileURLWithPath:prefsFile]];
         }
     }
 }
@@ -107,6 +110,19 @@
     NSString *cacheDirectory = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
     NSString *prefsFilePath = [cacheDirectory stringByAppendingPathComponent: @"alarmsettings.plist"];  // TODO - new filename?
     return prefsFilePath;
+}
+
+// prevent backup to the Cloud
+- (BOOL)_addSkipBackupAttributeToItemAtURL:(NSURL *)URL{
+    BOOL success=false;
+    if ([[NSFileManager defaultManager] fileExistsAtPath: [URL path]])  {
+        NSError *error = nil;
+        success = [URL setResourceValue: [NSNumber numberWithBool: YES] forKey: NSURLIsExcludedFromBackupKey error: &error];
+        if(!success){
+            NSLog(@"Error excluding %@ from backup %@", [URL lastPathComponent], error);
+        }
+    }
+    return success;
 }
 
 #pragma mark Alarm configuration methods
