@@ -9,9 +9,6 @@
 #import <Cordova/CDVPluginResult.h>
 
 @interface WakeupPlugin : CDVPlugin
-{
-    NSString* _callbackId;
-}
 
 - (void)wakeup:(CDVInvokedUrlCommand*)command;
 - (void)snooze:(CDVInvokedUrlCommand*)command;
