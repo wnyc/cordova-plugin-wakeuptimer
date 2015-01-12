@@ -25,7 +25,7 @@ This plugin is meant to work with Cordova 3.5.0+.
     // all responses from the audio player are channeled through successCallback and errorCallback
 
     // set wakeup timer
-    window.wakeuptimer.snooze( successCallback,  
+    window.wakeuptimer.wakeup( successCallback,  
                                errorCallback, 
                                // a list of alarms to set
                                alarms : [{
