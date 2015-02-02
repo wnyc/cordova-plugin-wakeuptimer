@@ -37,7 +37,8 @@ var app = {
     },
     // Update DOM on a Received Event
     receivedEvent: function(id) {
-        var parentElement = document.getElementById(id);
+        alert('Device is Ready');
+		var parentElement = document.getElementById(id);
         var listeningElement = parentElement.querySelector('.listening');
         var receivedElement = parentElement.querySelector('.received');
 
@@ -47,5 +48,38 @@ var app = {
         console.log('Received Event: ' + id);
     }
 };
-
+var testAlarm = {
+	setAlarm:function(caseNo){
+		/* var d = new Date();
+		if(caseNo == 1){
+			d.setMinutes(d.getMinutes() - 2);
+		} else if(caseNo == 2){
+			d.setMinutes(d.getMinutes() + 2);
+		} else if(caseNo == 3){
+			d.setMinutes(d.getMinutes() + 5);
+		}
+		var optionsAlarm = {
+			type : 'onetime',
+			time : { hour : d.getHours(), minute : d.getMinutes() },
+			message : this.get('message'),
+			sound : this.get('sound'),
+			action : this.get('action')
+		}
+		window.wakeuptimer.wakeup(
+			function(result) {
+				if (result.type==='wakeup') {
+					alert('wakeup alarm detected--' + result.extra);
+				} else if(result.type==='set'){
+					alert('wakeup alarm set--' + result);
+				} else {
+					alert('wakeup unhandled type (' + result.type + ')');
+				}
+			},
+			function() {
+				alert('Error Handler');
+			},
+			optionsAlarm
+		); */
+	}
+}
 app.initialize();
