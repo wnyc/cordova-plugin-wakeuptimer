@@ -31,10 +31,8 @@ This plugin is meant to work with Cordova 3.5.0+.
                                alarms : [{
                                  type : 'onetime',
                                  time : { hour : 14, minute : 30 },
-                                 extra : { }, // json containing app-specific information to be posted when alarm triggers 
-                                 message : this.get('message'),
-                                 sound : this.get('sound'),
-                                 action : this.get('action')
+                                 extra : { message : 'json containing app-specific information to be posted when alarm triggers' }, 
+                                 message : 'Alarm has expired!'
                                }] 
                              );
 
