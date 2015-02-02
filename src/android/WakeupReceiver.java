@@ -14,6 +14,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Bundle;
 import android.util.Log;
 
 public class WakeupReceiver extends BroadcastReceiver {
@@ -37,27 +38,38 @@ public class WakeupReceiver extends BroadcastReceiver {
 
 			Intent i = new Intent(context, c);
 			i.putExtra("wakeup", true);
-			i.putExtra("extra", intent.getExtras().get("extra").toString());
+			Bundle extrasBundle = intent.getExtras();
+			String extras=null;
+			if (extrasBundle!=null && extrasBundle.get("extra")!=null) {
+				extras = extrasBundle.get("extra").toString();
+			}
+			
+			if (extras!=null) {
+				i.putExtra("extra", extras);
+			}
 			i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			context.startActivity(i);
 
 			if(WakeupPlugin.connectionCallbackContext!=null) {
 				JSONObject o=new JSONObject();
 				o.put("type", "wakeup");
-				o.put("extra", intent.getExtras().get("extra").toString());
-				
+				if (extras!=null) {
+					o.put("extra", extras);
+				}
 				PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, o);
 				pluginResult.setKeepCallback(true);
 				WakeupPlugin.connectionCallbackContext.sendPluginResult(pluginResult);  
 			}
 			
-			if (intent.getExtras().getString("type").equals("daylist")) {
+			if (extrasBundle!=null && extrasBundle.getString("type")!=null && extrasBundle.getString("type").equals("daylist")) {
 				// repeat in one week
 				Date next = new Date(new Date().getTime() + (7 * 24 * 60 * 60 * 1000));
 				Log.d(LOG_TAG,"resetting alarm at " + sdf.format(next));
 	
 				Intent reschedule = new Intent(context, WakeupReceiver.class);
-				reschedule.putExtra("extra", intent.getExtras().get("extra").toString());
+				if (extras!=null) {
+					reschedule.putExtra("extra", intent.getExtras().get("extra").toString());
+				}
 				reschedule.putExtra("day", WakeupPlugin.daysOfWeek.get(intent.getExtras().get("day")));
 	
 				PendingIntent sender = PendingIntent.getBroadcast(context, 19999 + WakeupPlugin.daysOfWeek.get(intent.getExtras().get("day")), intent, PendingIntent.FLAG_UPDATE_CURRENT);

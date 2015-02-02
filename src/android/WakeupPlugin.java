@@ -22,6 +22,7 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
@@ -52,7 +53,8 @@ public class WakeupPlugin extends CordovaPlugin {
   public void onReset() {
 	// app startup
     Log.d(LOG_TAG, "Wakeup Plugin onReset");
-    if (! cordova.getActivity().getIntent().getExtras().getBoolean("wakeup", false)) {
+    Bundle extras = cordova.getActivity().getIntent().getExtras();
+    if (extras!=null && !extras.getBoolean("wakeup", false)) {
       setAlarmsFromPrefs( cordova.getActivity().getApplicationContext() );
     }
     super.onReset();

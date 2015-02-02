@@ -50,21 +50,20 @@ var app = {
 };
 var testAlarm = {
 	setAlarm:function(caseNo){
-		/* var d = new Date();
+		var d = new Date();
 		if(caseNo == 1){
-			d.setMinutes(d.getMinutes() - 2);
+			d.setTime(d.getTime() - 2*60*1000); // set the alarm for two minutes prior to the current time on the next day
 		} else if(caseNo == 2){
-			d.setMinutes(d.getMinutes() + 2);
+			d.setTime(d.getTime() + 2*60*1000);
 		} else if(caseNo == 3){
-			d.setMinutes(d.getMinutes() + 5);
+			d.setTime(d.getTime() + 5*60*1000);
 		}
-		var optionsAlarm = {
+		var optionsAlarm = [{
 			type : 'onetime',
 			time : { hour : d.getHours(), minute : d.getMinutes() },
-			message : this.get('message'),
-			sound : this.get('sound'),
-			action : this.get('action')
-		}
+			message : 'Alarm has triggered!',
+			extra : { message : 'this json will be passed back to javascript as result.extra when the alarm expires' }
+		}];
 		window.wakeuptimer.wakeup(
 			function(result) {
 				if (result.type==='wakeup') {
@@ -78,8 +77,8 @@ var testAlarm = {
 			function() {
 				alert('Error Handler');
 			},
-			optionsAlarm
-		); */
+			{alarms : optionsAlarm}
+		);
 	}
 }
 app.initialize();
