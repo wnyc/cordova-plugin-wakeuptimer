@@ -10,4 +10,8 @@
     </author>
     <content src="index.html" />
     <access origin="*" />
+    <feature name="WakeupPlugin">
+        <param name="android-package" value="org.nypr.cordova.wakeupplugin.WakeupPlugin" />
+        <param name="onload" value="true" />
+    </feature>
 </widget>
