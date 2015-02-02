@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="org.nypr.cordova.wakeupplugin.simplealarmexample" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <preference name="loglevel" value="DEBUG" />
+    <name>SimpleAlarm</name>
+    <description>
+        A sample Apache Cordova application that responds to the deviceready event.
+    </description>
+    <author email="dev@cordova.apache.org" href="http://cordova.io">
+        Apache Cordova Team
+    </author>
+    <content src="index.html" />
+    <access origin="*" />
+    <feature name="WakeupPlugin">
+        <param name="android-package" value="org.nypr.cordova.wakeupplugin.WakeupPlugin" />
+        <param name="onload" value="true" />
+    </feature>
+</widget>

@@ -1,0 +1,50 @@
+{
+    "prepare_queue": {
+        "installed": [],
+        "uninstalled": []
+    },
+    "config_munge": {
+        "files": {
+            "res/xml/config.xml": {
+                "parents": {
+                    "/*": [
+                        {
+                            "xml": "<feature name=\"WakeupPlugin\"><param name=\"android-package\" value=\"org.nypr.cordova.wakeupplugin.WakeupPlugin\" /><param name=\"onload\" value=\"true\" /></feature>",
+                            "count": 1
+                        }
+                    ]
+                }
+            },
+            "AndroidManifest.xml": {
+                "parents": {
+                    "/*": [
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.RECEIVE_BOOT_COMPLETED\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.WAKE_LOCK\" />",
+                            "count": 1
+                        }
+                    ],
+                    "/manifest/application": [
+                        {
+                            "xml": "<receiver android:name=\"org.nypr.cordova.wakeupplugin.WakeupReceiver\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<receiver android:name=\"org.nypr.cordova.wakeupplugin.WakeupBootReceiver\"><intent-filter><action android:name=\"android.intent.action.BOOT_COMPLETED\" /></intent-filter></receiver>",
+                            "count": 1
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "installed_plugins": {
+        "org.nypr.cordova.wakeupplugin": {
+            "PACKAGE_NAME": "org.nypr.cordova.wakeupplugin.simplealarmexample"
+        }
+    },
+    "dependent_plugins": {}
+}
