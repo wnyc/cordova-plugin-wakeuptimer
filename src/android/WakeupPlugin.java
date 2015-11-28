@@ -64,6 +64,8 @@ public class WakeupPlugin extends CordovaPlugin {
 	public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
 		boolean ret=true;
 		try {
+			Log.d(LOG_TAG, "set up callbackContext");
+			WakeupPlugin.connectionCallbackContext = callbackContext;
 			if(action.equalsIgnoreCase("wakeup")) {
 				JSONObject options=args.getJSONObject(0);
 
@@ -77,7 +79,6 @@ public class WakeupPlugin extends CordovaPlugin {
 				saveToPrefs(cordova.getActivity().getApplicationContext(), alarms);
 				setAlarms(cordova.getActivity().getApplicationContext(), alarms, true);
 
-				WakeupPlugin.connectionCallbackContext = callbackContext;
 				PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
 				pluginResult.setKeepCallback(true);
 				callbackContext.sendPluginResult(pluginResult);  
@@ -90,7 +91,6 @@ public class WakeupPlugin extends CordovaPlugin {
 					setAlarms(cordova.getActivity().getApplicationContext(), alarms, false);
 				}
 						
-				WakeupPlugin.connectionCallbackContext = callbackContext;
 				PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
 				pluginResult.setKeepCallback(true);
 				callbackContext.sendPluginResult(pluginResult);  
