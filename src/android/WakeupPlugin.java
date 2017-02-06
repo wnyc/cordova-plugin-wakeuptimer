@@ -147,12 +147,13 @@ public class WakeupPlugin extends CordovaPlugin {
 			}
 			
 			JSONObject time=alarm.getJSONObject("time");
-			
+
 			if ( type.equals("onetime")) {
 				Calendar alarmDate=getOneTimeAlarmDate(time);
 				Intent intent = new Intent(context, WakeupReceiver.class);
 				if(alarm.has("extra")){
 					intent.putExtra("extra", alarm.getJSONObject("extra").toString());
+					intent.putExtra("skipOnRunning", alarm.getBoolean("skipOnRunning"));
 					intent.putExtra("type", type);
 				}
 				
@@ -169,6 +170,7 @@ public class WakeupPlugin extends CordovaPlugin {
 						intent.putExtra("type", type);
 						intent.putExtra("time", time.toString());
 						intent.putExtra("day", days.getString(j));
+						intent.putExtra("skipOnRunning", alarm.getBoolean("skipOnRunning"));
 					}
 					
 					setNotification(context, type, alarmDate, intent, ID_DAYLIST_OFFSET + daysOfWeek.get(days.getString(j)));
@@ -180,6 +182,7 @@ public class WakeupPlugin extends CordovaPlugin {
 				if(alarm.has("extra")){
 					intent.putExtra("extra", alarm.getJSONObject("extra").toString());
 					intent.putExtra("type", type);
+					intent.putExtra("skipOnRunning", alarm.getBoolean("skipOnRunning"));
 				}
 				setNotification(context, type, alarmDate, intent, ID_SNOOZE_OFFSET);
 			}
