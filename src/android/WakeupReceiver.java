@@ -15,6 +15,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.util.Log;
 
 public class WakeupReceiver extends BroadcastReceiver {
@@ -26,24 +27,35 @@ public class WakeupReceiver extends BroadcastReceiver {
 	public void onReceive(Context context, Intent intent) {
 		SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		Log.d(LOG_TAG, "wakeuptimer expired at " + sdf.format(new Date().getTime()));
-	
+
+		Bundle extrasBundle = intent.getExtras();
+
+		if (extrasBundle.get("skipOnAwake").equals(true)) {
+			PowerManager powerManager = (PowerManager)context.getSystemService(Context.POWER_SERVICE);
+			boolean isScreenAwake = (Build.VERSION.SDK_INT < 20 ? powerManager.isScreenOn() : powerManager.isInteractive());
+
+			if (isScreenAwake) {
+				Log.d(LOG_TAG, "screen is awake. Postponing launch.");
+				return;
+			}
+		}
+
 		try {
 			String packageName = context.getPackageName();
 			Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(packageName);
-			String className = launchIntent.getComponent().getClassName();		    	
+			String className = launchIntent.getComponent().getClassName();
 			Log.d(LOG_TAG, "launching activity for class " + className);
 
 			@SuppressWarnings("rawtypes")
-			Class c = Class.forName(className); 
+			Class c = Class.forName(className);
 
 			Intent i = new Intent(context, c);
 			i.putExtra("wakeup", true);
-			Bundle extrasBundle = intent.getExtras();
 			String extras=null;
 			if (extrasBundle!=null && extrasBundle.get("extra")!=null) {
 				extras = extrasBundle.get("extra").toString();
 			}
-			
+
 			if (extras!=null) {
 				i.putExtra("extra", extras);
 			}
