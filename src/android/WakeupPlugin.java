@@ -195,7 +195,11 @@ public class WakeupPlugin extends CordovaPlugin {
 			intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
 			PendingIntent sender = PendingIntent.getBroadcast(context, id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 			AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-			if (Build.VERSION.SDK_INT>=19) {
+			
+			if (Build.VERSION.SDK_INT >= 23) {
+				// This method will be triggered even with doze mode activated (limited to once per 9 minutes per app)
+				alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmDate.getTimeInMillis(), sender);
+			} else if (Build.VERSION.SDK_INT >= 19) {
 				alarmManager.setExact(AlarmManager.RTC_WAKEUP, alarmDate.getTimeInMillis(), sender);
 			} else {
 				alarmManager.set(AlarmManager.RTC_WAKEUP, alarmDate.getTimeInMillis(), sender);
